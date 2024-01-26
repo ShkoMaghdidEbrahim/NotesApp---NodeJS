@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Note App</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        header {
+            background-color: #007bff;
+            color: #fff;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        main {
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1, h2, h3 {
+            color: #007bff;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+            color: #333;
+        }
+
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #notes-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+
+        .note {
+            height: auto;
+            width: calc(33% - 20px);
+
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 15px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+        }
+
+        .note-image {
+            padding-top: 15px;
+            border: solid 1px red;
+
+            display: block;
+            max-width: 200px;
+            width: 200px;
+            height: auto;
+        }
+
+        .note h3 {
+            margin-top: 0;
+            color: #007bff;
+            font-size: 1.2rem;
+        }
+
+        .note p {
+            color: #555;
+        }
+
+        .note img {
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .note-buttons {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+        }
+
+        .note-buttons button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            margin-left: 8px;
+            color: #007bff;
+            transition: color 0.3s;
+        }
+
+        .note-buttons button:hover {
+            color: #0056b3;
+        }
+
+        .edit-mode {
+            background-color: #f0f8ff;
+        }
+
+        .edit-buttons {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        .edit-buttons button {
+            margin-right: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            transition: background-color 0.3s;
+        }
+
+        .edit-buttons button:hover {
+            background-color: #0056b3;
+        }
+
+        [contenteditable="true"] {
+            border: 1px solid #007bff;
+            padding: 5px;
+            margin: 5px 0;
+            font-size: 1rem;
+            border-radius: 4px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            background-color: #007bff;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Note App</h1>
+    <h2>Create a New Note</h2>
+</header>
+
+<main>
+    <form id="note-form">
+        <label for="title">Title:</label>
+        <input id="title" name="title" required type="text">
+
+        <label for="content">Content:</label>
+        <textarea id="content" name="content" required></textarea>
+
+        <label for="uploaded-image">Upload Image:</label>
+        <input accept="image/*" id="uploaded-image" type="file">
+
+        <button onclick="createNote()" type="button">Create Note</button>
+        <button onclick="deleteAllNotes()" type="button">Delete All Notes</button>
+    </form>
+
+    <div id="notes-container">
+    </div>
+</main>
+
+<footer>
+    &copy; 2024 Note App. All rights reserved.
+</footer>
+<script>
+    async function fetchNotes() {
+        try {
+            const response = await fetch(`http://localhost:3000/notes/${-1}`);
+            const notes = await response.json();
+
+            const notesContainer = document.getElementById('notes-container');
+            notesContainer.innerHTML = '';
+
+            notes.forEach(note => {
+                const noteDiv = createNoteElement(note);
+                notesContainer.appendChild(noteDiv);
+            });
+        } catch (error) {
+            console.error('Error fetching notes:', error);
+        }
+    }
+
+    function createNoteElement(note) {
+        const noteDiv = document.createElement('div');
+        noteDiv.classList.add('note');
+        noteDiv.id = `note-${note.id}`;
+
+        noteDiv.innerHTML = `
+                <div class="note-buttons">
+                    <button onclick="toggleEditMode(${note.id})"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteNote(${note.id})"><i class="fas fa-trash"></i></button>
+                </div>
+                <h3 class="note-title">${note.title}</h3>
+                <p class="note-content">${note.content}</p>
+                <div class="edit-buttons"></div>
+            `;
+
+        if (note.image_url !== null && note.image_url !== undefined) {
+            const image = document.createElement('img');
+            image.classList.add('note-image');
+            image.src = note.image_url;
+            image.alt = 'image';
+            image.width = 100;
+            noteDiv.append(image);
+        }
+
+        return noteDiv;
+    }
+
+    async function createNote() {
+        const title = document.getElementById('title').value;
+        const content = document.getElementById('content').value;
+
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('content', content);
+        formData.append('image', document.getElementById('uploaded-image').files[0]);
+
+        // Send a POST request with the FormData
+        await fetch('http://localhost:3000/notes', {
+            method: 'POST',
+            body: formData,
+        });
+
+        // Reset the form and fetch updated notes
+        document.getElementById('note-form').reset();
+        await fetchNotes();
+    }
+
+    async function deleteNote(id) {
+        await fetch(`http://localhost:3000/notes/${id}`, {
+            method: 'DELETE',
+        });
+
+        await fetchNotes();
+    }
+
+    async function deleteAllNotes() {
+        await fetch(`http://localhost:3000/notes/${-1}`, {
+            method: 'DELETE',
+        });
+
+        await fetchNotes();
+    }
+
+    function toggleEditMode(noteId) {
+        const noteDiv = document.getElementById(`note-${noteId}`);
+        const isEditing = noteDiv.classList.toggle('edit-mode');
+
+        const titleElement = noteDiv.querySelector('.note-title');
+        const contentElement = noteDiv.querySelector('.note-content');
+        const editButtons = noteDiv.querySelector('.edit-buttons');
+
+        titleElement.contentEditable = isEditing;
+        contentElement.contentEditable = isEditing;
+
+        editButtons.innerHTML = '';
+
+        if (isEditing) {
+            editButtons.innerHTML = `
+                    <button onclick="saveEdit(${noteId})">Save</button>
+                    <button onclick="cancelEdit(${noteId})">Cancel</button>
+                    <input type="file" accept="image/*" id="uploaded-image-edit">
+                `;
+        }
+    }
+
+    async function saveEdit(noteId) {
+        const noteDiv = document.getElementById(`note-${noteId}`);
+        const title = noteDiv.querySelector('.note-title').innerText;
+        const content = noteDiv.querySelector('.note-content').innerText;
+        const imageInput = noteDiv.querySelector('#uploaded-image-edit');
+
+        // Create FormData for the update
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('content', content);
+
+        const newImage = imageInput.files[0];
+        if (newImage) {
+            formData.append('image', newImage);
+        }
+
+        // Send a PUT request with the FormData to update the note
+        await fetch(`http://localhost:3000/notes/${noteId}`, {
+            method: 'PUT',
+            body: formData,
+        });
+
+        // Toggle back to view mode and fetch updated notes
+        toggleEditMode(noteId);
+        await fetchNotes();
+    }
+
+    function cancelEdit(noteId) {
+        toggleEditMode(noteId);
+    }
+
+    fetchNotes();
+</script>
+</body>
+</html>
