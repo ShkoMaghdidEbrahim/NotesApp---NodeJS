@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<style>
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                margin: 0;
+                background-color: #f4f4f4;
+                font-family: 'Arial', sans-serif;
+            }
+            
+            .registration-container {
+                background-color: #fff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                text-align: center;
+                max-width: 400px;
+                width: 100%;
+            }
+            
+            form {
+                display: flex;
+                flex-direction: column;
+                margin-top: 20px;
+            }
+            
+            label {
+                margin-bottom: 6px;
+                font-weight: bold;
+                color: #333;
+            }
+            
+            input {
+                padding: 10px;
+                margin-bottom: 12px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                font-size: 16px;
+            }
+            
+            button {
+                padding: 12px;
+                background-color: #4caf50;
+                color: #fff;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 16px;
+                transition: background-color 0.3s ease;
+            }
+            
+            button:hover {
+                background-color: #45a049;
+            }
+            
+            .error-message {
+                color: #ff0000;
+                margin-top: 10px;
+            }
+            
+            .login-link {
+                margin-top: 20px;
+                font-size: 14px;
+                color: #555;
+            }
+            
+            .login-link a {
+                color: #4caf50;
+                text-decoration: none;
+                font-weight: bold;
+            }
+		</style>
+		<title>Registration Page</title>
+	</head>
+	<body>
+		<div class="registration-container">
+			<h2>Register</h2>
+			<form id="registration-form">
+				<label for="fullName">Username</label>
+				<input type="text" id="fullName" name="fullName" required>
+				
+				<label for="password">Password</label>
+				<input type="password" id="password" name="password" required>
+				
+				<button type="button" onclick="register()">Register</button>
+			</form>
+			<p id="error-message" class="error-message"></p>
+			<div class="login-link">
+				Already have an account? <a href="./UserLogin.html">Login</a>
+			</div>
+		</div>
+		
+		<script>
+			async function register() {
+				const fullName = document.getElementById('fullName').value;
+				const password = document.getElementById('password').value;
+				
+				if (fullName && password) {
+					document.getElementById('error-message').innerText = '';
+					
+					const response = await fetch('http://localhost:3000/register', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({
+							username: fullName,
+							password: password
+						})
+					});
+					if (response.status === 201) {
+						alert('Registration successful!');
+					}
+					else {
+						alert('Registration failed! \n' + response.statusText);
+					}
+				}
+				else {
+					document.getElementById('error-message').innerText = 'Please fill in all fields.';
+				}
+			}
+		</script>
+	</body>
+</html>
