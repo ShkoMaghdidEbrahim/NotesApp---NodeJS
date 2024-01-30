@@ -6,11 +6,12 @@ const router = express.Router();
 const usersController = require('../Controllers/UsersController');
 
 app.use(router);
-
-router.route('/login').post(usersController.loginUser)
+router.use(cors());
 
 router.route('/register').post(usersController.registerUser)
 
 router.route('/users').get(usersController.showAllUsers)
+
+router.route('/login').post(usersController.loginUser)
 
 module.exports = router;

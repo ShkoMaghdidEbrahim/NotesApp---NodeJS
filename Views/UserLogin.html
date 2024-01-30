@@ -115,7 +115,7 @@
 						})
 					});
 					if (response.status === 200) {
-						alert('Login successful!');
+						window.location.replace('./index.html')
 					}
 					else {
 						alert('Login failed! \n' + response.statusText);

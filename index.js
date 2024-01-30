@@ -6,11 +6,11 @@ const cors = require("cors");
 app.use(express.json());
 app.use(cors());
 
-const notesRoutes = require('../note-app/Routes/NotesRoutes');
-app.use(notesRoutes);
-
 const usersRoutes = require('../note-app/Routes/UserRoutes');
 app.use(usersRoutes);
+
+const notesRoutes = require('../note-app/Routes/NotesRoutes');
+app.use(notesRoutes);
 
 app.listen(PORT, () => {
 	console.log(`Server is running on http://localhost:${PORT}`);

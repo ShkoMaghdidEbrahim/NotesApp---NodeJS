@@ -9,6 +9,10 @@ app.use(router);
 
 const upload = notesController.storage;
 
+router.use(cors());
+const authenticateToken = require('../Controllers/AuthenticateToken');
+router.use(authenticateToken.authenticateToken);
+
 router.route('/notes').
 	   post(upload.single('image'), notesController.createNote);
 

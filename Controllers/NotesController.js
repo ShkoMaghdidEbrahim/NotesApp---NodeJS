@@ -14,13 +14,22 @@ const storage = multer(multer.diskStorage({
 }));
 
 const getNotes = async (req, res) => {
+	const user = req.user;
+	console.log(user.username)
 	if (req.params.id === "-1") {
 		console.log("ehefasd")
-		const notes = await knex('notes').select('*').where('deleted', false);
+		const notes = await knex('notes').
+			select('*').
+			where('username', user.username).
+			andWhere('deleted', false);
 		res.json(notes);
 	}
 	else {
-		const note = await knex('notes').select('*').where('deleted', false);
+		const note = await knex('notes').
+			select('*').
+			where('id', req.params.id).
+			andWhere('username', user.username).
+			andWhere('deleted', false);
 		res.json(note);
 	}
 }
@@ -29,12 +38,13 @@ const createNote = async (req, res) => {
 	try {
 		const {title, content} = req.body;
 		let imageUrl = null;
+		const user = req.user;
 		
 		if (req.file) {
 			imageUrl = `/uploads/${req.file.filename}`;
 		}
 		
-		await knex('notes').insert({title, content, image_url: imageUrl});
+		await knex('notes').insert({title, content, image_url: imageUrl, username: user.username});
 		
 		res.status(201).json({message: 'Note created successfully'});
 	}

@@ -1,6 +1,7 @@
 const knex = require('knex')(require('../knexfile'));
-const fs = require("fs");
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 const registerUser = async (req, res) => {
 	const username = req.body.username;
@@ -24,7 +25,11 @@ const loginUser = async (req, res) => {
 	const authenticatedUser = await authenticateUser(username, password);
 	
 	if (authenticatedUser) {
-		res.status(200).send({message: "Authentication successful"});
+		const token = jwt.sign({username: authenticatedUser.username}, process.env.JWT_ACCESS_SECRET);
+		res.status(200).send({
+			message: "Authentication successful",
+			token: token
+		});
 	}
 	else {
 		res.status(401).send({message: "Authentication failed"});
