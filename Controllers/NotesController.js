@@ -4,14 +4,16 @@ const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 
-const storage = multer(multer.diskStorage({
-	destination: function (req, file, cb) {
-		cb(null, path.join(__dirname, 'uploads'));
-	}, filename: function (req, file, cb) {
-		const randomFilename = `${Date.now()}-${uuid.v4()}${file.originalname.substring(file.originalname.lastIndexOf('.'))}`;
-		cb(null, randomFilename);
-	},
-}));
+const storage = multer({
+	storage: multer.diskStorage({
+		destination: function (req, file, cb) {
+			cb(null, path.join(__dirname, '..', 'uploads'));
+		}, filename: function (req, file, cb) {
+			const randomFilename = `${Date.now()}-${uuid.v4()}${file.originalname.substring(file.originalname.lastIndexOf('.'))}`;
+			cb(null, randomFilename);
+		},
+	})
+});
 
 const getNotes = async (req, res) => {
 	const user = req.user;
@@ -57,7 +59,7 @@ const createNote = async (req, res) => {
 const deleteNotes = async (req, res) => {
 	let message = "";
 	if (req.params.id === "-1") {
-		const availableIDs = await knex('notes').select('id');
+		const availableIDs = await knex('notes').select('id').where('deleted', false).andWhere('username', req.user.username);
 		const ids = availableIDs.map(note => note.id);
 		
 		if (ids.length > 0) {
@@ -72,7 +74,7 @@ const deleteNotes = async (req, res) => {
 		
 	}
 	else {
-		await knex('notes').where('id', req.params.id).update({deleted: true});
+		await knex('notes').where('id', req.params.id).andWhere('username', req.user.username).update({deleted: true});
 		res.json({message: message + 'Note deleted successfully'});
 	}
 }
@@ -82,7 +84,8 @@ const updateNote = async (req, res) => {
 		const {title, content} = req.body;
 		let imageUrl = null;
 		let message = "";
-		
+		console.log(req.file)
+		console.log(req.file.filename)
 		if (req.file) {
 			imageUrl = `/uploads/${req.file.filename}`;
 		}

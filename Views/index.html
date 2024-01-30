@@ -5,6 +5,11 @@
 		<meta content = "width=device-width, initial-scale=1.0" name = "viewport">
 		<title>Note App</title>
 		<link href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel = "stylesheet">
+		<script>
+			if (!localStorage.getItem('token')) {
+				window.location.replace('./UserLogin.html')
+			}
+		</script>
 		<style>
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -16,7 +21,7 @@
             }
             
             header {
-                background-color: #4caf50;
+                background-color: #4CAF50;
                 color: #FFF;
                 text-align: center;
                 padding: 20px 0;
@@ -56,7 +61,7 @@
             }
             
             button {
-                background-color: #4caf50;
+                background-color: #4CAF50;
                 color: #FFF;
                 border: none;
                 border-radius: 4px;
@@ -67,7 +72,7 @@
             }
             
             button:hover {
-                background-color: #4caf50;
+                background-color: #4CAF50;
             }
             
             #notes-container {
@@ -98,7 +103,7 @@
             
             .note h3 {
                 margin-top: 0;
-                color: #4caf50;
+                color: #4CAF50;
                 font-size: 1.2rem;
             }
             
@@ -125,7 +130,7 @@
                 cursor: pointer;
                 font-size: 1.2rem;
                 margin-left: 8px;
-                color: #4caf50;
+                color: #4CAF50;
                 transition: color 0.3s;
             }
             
@@ -146,7 +151,7 @@
                 margin-right: 10px;
                 font-size: 1rem;
                 cursor: pointer;
-                background-color: #4caf50;
+                background-color: #4CAF50;
                 color: #FFF;
                 border: none;
                 border-radius: 4px;
@@ -169,15 +174,18 @@
             footer {
                 text-align: center;
                 padding: 20px 0;
-                background-color: #4caf50;
+                background-color: #4CAF50;
                 color: #FFF;
             }
 		</style>
 	</head>
 	<body>
 		<header>
-			<h1>Note App</h1>
-			<h2>Create a New Note</h2>
+			<div>
+				<h1>Note App</h1>
+				<h2>Create a New Note</h2>
+			</div>
+			<button onclick = "logout()">Logout</button>
 		</header>
 		
 		<main>
@@ -204,8 +212,18 @@
 		</footer>
 		<script>
 			async function fetchNotes() {
+				
+				const token = localStorage.getItem('token');
 				try {
-					const response = await fetch(`http://localhost:3000/notes/${-1}`);
+					const response = await fetch(
+						`http://localhost:3000/notes/${-1}`, {
+							method: 'GET',
+							headers: {
+								'Authorization': `Bearer ${token}`
+							},
+						}
+					);
+					await checkToken(response);
 					const notes = await response.json();
 					
 					const notesContainer = document.getElementById('notes-container');
@@ -258,28 +276,40 @@
 				formData.append('content', content);
 				formData.append('image', document.getElementById('uploaded-image').files[0]);
 				
-				await fetch('http://localhost:3000/notes', {
+				const token = localStorage.getItem('token');
+				const response = await fetch('http://localhost:3000/notes', {
 					method: 'POST',
+					headers: {
+						'Authorization': `Bearer ${token}`
+					},
 					body: formData,
 				});
-				
+				await checkToken(response);
 				document.getElementById('note-form').reset();
 				await fetchNotes();
 			}
 			
 			async function deleteNote(id) {
-				await fetch(`http://localhost:3000/notes/${id}`, {
+				const token = localStorage.getItem('token');
+				const response = await fetch(`http://localhost:3000/notes/${id}`, {
 					method: 'DELETE',
+					headers: {
+						'Authorization': `Bearer ${token}`
+					},
 				});
-				
+				await checkToken(response);
 				await fetchNotes();
 			}
 			
 			async function deleteAllNotes() {
-				await fetch(`http://localhost:3000/notes/${-1}`, {
+				const token = localStorage.getItem('token');
+				const response = await fetch(`http://localhost:3000/notes/${-1}`, {
 					method: 'DELETE',
+					headers: {
+						'Authorization': `Bearer ${token}`
+					},
 				});
-				
+				await checkToken(response);
 				await fetchNotes();
 			}
 			
@@ -320,17 +350,62 @@
 					formData.append('image', newImage);
 				}
 				
-				await fetch(`http://localhost:3000/notes/${noteId}`, {
+				const token = localStorage.getItem('token');
+				const response = await fetch(`http://localhost:3000/notes/${noteId}`, {
 					method: 'PUT',
+					headers: {
+						'Authorization': `Bearer ${token}`
+					},
 					body: formData,
 				});
 				
+				await checkToken(response);
 				toggleEditMode(noteId);
 				await fetchNotes();
 			}
 			
 			function cancelEdit(noteId) {
 				toggleEditMode(noteId);
+			}
+			
+			async function logout() {
+				localStorage.removeItem('token');
+				await fetch('http://localhost:3000/users/logout', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						username: localStorage.getItem('username')
+					})
+				});
+				localStorage.removeItem('username');
+				localStorage.removeItem('refreshToken');
+				window.location.href = './UserLogin.html';
+			}
+			
+			async function checkToken(response) {
+				if (response.status === 403) {
+					const response = await fetch('http://localhost:3000/users/regenerate_access_token', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({
+							refreshToken: localStorage.getItem('refreshToken'),
+							username: localStorage.getItem('username')
+						})
+					});
+					if (response.status === 200) {
+						const data = await response.json();
+						localStorage.setItem('token', data.token);
+						await fetchNotes();
+					}
+					else {
+						alert('Token expired! Please login again.');
+						await logout();
+					}
+				}
 			}
 			
 			fetchNotes();

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang = "en">
 	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta charset = "UTF-8">
+		<meta content = "width=device-width, initial-scale=1.0" name = "viewport">
 		<style>
             body {
                 display: flex;
@@ -10,12 +10,12 @@
                 justify-content: center;
                 height: 100vh;
                 margin: 0;
-                background-color: #f4f4f4;
+                background-color: #F4F4F4;
                 font-family: 'Arial', sans-serif;
             }
             
             .login-container {
-                background-color: #fff;
+                background-color: #FFF;
                 padding: 20px;
                 border-radius: 8px;
                 box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -39,15 +39,15 @@
             input {
                 padding: 10px;
                 margin-bottom: 12px;
-                border: 1px solid #ccc;
+                border: 1px solid #CCC;
                 border-radius: 4px;
                 font-size: 16px;
             }
             
             button {
                 padding: 12px;
-                background-color: #4caf50;
-                color: #fff;
+                background-color: #4CAF50;
+                color: #FFF;
                 border: none;
                 border-radius: 4px;
                 cursor: pointer;
@@ -56,11 +56,11 @@
             }
             
             button:hover {
-                background-color: #45a049;
+                background-color: #45A049;
             }
             
             .error-message {
-                color: #ff0000;
+                color: #FF0000;
                 margin-top: 10px;
             }
             
@@ -71,7 +71,7 @@
             }
             
             .register-link a {
-                color: #4caf50;
+                color: #4CAF50;
                 text-decoration: none;
                 font-weight: bold;
             }
@@ -79,20 +79,20 @@
 		<title>Login Page</title>
 	</head>
 	<body>
-		<div class="login-container">
+		<div class = "login-container">
 			<h2>Login</h2>
-			<form id="login-form">
-				<label for="username">Username:</label>
-				<input type="text" id="username" name="username" required>
+			<form id = "login-form">
+				<label for = "username">Username:</label>
+				<input id = "username" name = "username" required type = "text">
 				
-				<label for="password">Password:</label>
-				<input type="password" id="password" name="password" required>
+				<label for = "password">Password:</label>
+				<input id = "password" name = "password" required type = "password">
 				
-				<button type="button" onclick="login()">Login</button>
+				<button onclick = "login()" type = "button">Login</button>
 			</form>
-			<p id="error-message" class="error-message"></p>
-			<div class="register-link">
-				Don't have an account? <a href="./UserRegistration.html">Register</a>
+			<p class = "error-message" id = "error-message"></p>
+			<div class = "register-link">
+				Don't have an account? <a href = "./UserRegistration.html">Register</a>
 			</div>
 		</div>
 		
@@ -103,8 +103,8 @@
 				
 				if (username && password) {
 					document.getElementById('error-message').innerText = '';
-
-					const response = await fetch('http://localhost:3000/login', {
+					
+					const response = await fetch('http://localhost:3000/users/login', {
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json'
@@ -114,47 +114,22 @@
 							password: password
 						})
 					});
+					
+					response.json().then(data => {
+						localStorage.setItem('token', data.token);
+						localStorage.setItem('refreshToken', data.refreshToken);
+					});
+					localStorage.setItem('username', username);
+					
 					if (response.status === 200) {
 						window.location.replace('./index.html')
 					}
 					else {
 						alert('Login failed! \n' + response.statusText);
 					}
-				} else {
-					document.getElementById('error-message').innerText = 'Please enter both username and password.';
-				}
-			}
-			
-			async function register() {
-				const fullName = document.getElementById('fullName').value;
-				const password = document.getElementById('password').value;
-				
-				if (fullName && password) {
-					document.getElementById('error-message').innerText = '';
-					
-					const formData = new FormData();
-					formData.append('username', fullName);
-					formData.append('password', password);
-					
-					const response = await fetch('http://localhost:3000/register', {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json'
-						},
-						body: JSON.stringify({
-							username: fullName,
-							password: password
-						})
-					});
-					if (response.status === 201) {
-						alert('Registration successful!');
-					}
-					else {
-						alert('Registration failed! \n' + response.statusText);
-					}
 				}
 				else {
-					document.getElementById('error-message').innerText = 'Please fill in all fields.';
+					document.getElementById('error-message').innerText = 'Please enter both username and password.';
 				}
 			}
 		</script>

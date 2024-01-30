@@ -8,10 +8,18 @@ const usersController = require('../Controllers/UsersController');
 app.use(router);
 router.use(cors());
 
-router.route('/register').post(usersController.registerUser)
+//Real routes
+router.route('/register').post(usersController.registerUser);
 
-router.route('/users').get(usersController.showAllUsers)
+router.route('/login').post(usersController.loginUser);
 
-router.route('/login').post(usersController.loginUser)
+router.route('/logout').post(usersController.logoutUser);
+
+router.route('/regenerate_access_token').post(usersController.regenerateAccessToken);
+
+//For testing purposes
+router.route('/').get(usersController.showAllUsers);
+
+router.route('/refresh_tokens').get(usersController.refreshTokens);
 
 module.exports = router;

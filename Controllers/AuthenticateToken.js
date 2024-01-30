@@ -1,9 +1,11 @@
 const knex = require('knex')(require('../knexfile'));
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const authenticateToken = async (req, res, next) => {
+	if (req.path === '/refresh_tokens') {
+		return next();
+	}
 	const authHeader = req.headers['authorization'];
 	const token = authHeader && authHeader.split(' ')[1];
 	if (token == null) {

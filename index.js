@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(cors());
 
 const usersRoutes = require('../note-app/Routes/UserRoutes');
-app.use(usersRoutes);
+app.use('/users', usersRoutes);
 
 const notesRoutes = require('../note-app/Routes/NotesRoutes');
 app.use(notesRoutes);

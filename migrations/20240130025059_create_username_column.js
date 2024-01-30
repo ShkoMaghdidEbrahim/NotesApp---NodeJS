@@ -1,10 +1,10 @@
-exports.up = function(knex) {
+exports.up = function (knex) {
 	return knex.schema.table('notes', table => {
-		table.string('username').notNullable();
+		table.string('username').notNullable().references('username').inTable('users');
 	})
 };
 
-exports.down = function(knex) {
+exports.down = function (knex) {
 	return knex.schema.table('notes', table => {
 		table.dropColumn('username');
 	})
