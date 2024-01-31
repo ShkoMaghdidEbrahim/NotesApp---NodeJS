@@ -26,7 +26,7 @@ const loginUser = async (req, res) => {
 	const authenticatedUser = await authenticateUser(username, password);
 	
 	if (authenticatedUser) {
-		const token = jwt.sign({username: authenticatedUser.username}, process.env.JWT_ACCESS_SECRET, {expiresIn: '2s'});
+		const token = jwt.sign({username: authenticatedUser.username}, process.env.JWT_ACCESS_SECRET, {expiresIn: '10m'});
 		const refreshToken = jwt.sign({username: authenticatedUser.username}, process.env.JWT_REFRESH_SECRET);
 		
 		const user_id = await knex('users').where({username: username}).first();
@@ -34,9 +34,12 @@ const loginUser = async (req, res) => {
 		await knex('refresh_tokens').where({user_id: user_id.id}).del();
 		await knex('refresh_tokens').insert({token: refreshToken, user_id: user_id.id});
 		
-		res.status(200).send({
-			message: "Authentication successful", token: token, refreshToken: refreshToken
-		});
+		res.cookie('token', token, {httpOnly: true});
+		res.cookie('refreshToken', refreshToken, {httpOnly: true});
+		res.cookie('username', username, {httpOnly: true});
+		res.cookie('authenticated', true, {httpOnly: false});
+		
+		res.status(200).send({message: "Authentication successful"});
 	}
 	else {
 		res.status(401).send({message: "Authentication failed"});
@@ -61,28 +64,34 @@ async function authenticateUser(username, password) {
 }
 
 const logoutUser = async (req, res) => {
-	const user_id = await knex('users').where({username: req.body.username}).first();
+	console.log(req.cookies);
+	const user_id = await knex('users').where({username: req.cookies.username}).first();
 	await knex('refresh_tokens').where({user_id: user_id.id}).del();
+	res.clearCookie('token');
+	res.clearCookie('refreshToken');
+	res.clearCookie('username');
+	res.clearCookie('authenticated');
 	res.json({message: 'Logged out successfully'});
 }
 
 const regenerateAccessToken = async (req, res) => {
-	const refreshToken = req.body.refreshToken;
-	console.log(refreshToken)
+	console.log(req.cookies);
+	const refreshToken = req.cookies.refreshToken;
 	
 	if (!refreshToken) {
 		res.status(401).send({message: 'No refresh token provided'});
 	}
 	else {
-		const user_id = await knex('users').where({username: req.body.username}).first();
+		const user_id = await knex('users').where({username: req.cookies.username}).first();
 		const token = await knex('refresh_tokens').where({token: refreshToken, user_id: user_id.id}).first();
 		
 		if (!token) {
 			res.status(401).send({message: 'Invalid refresh token'});
 		}
 		else {
-			const accessToken = jwt.sign({username: req.body.username}, process.env.JWT_ACCESS_SECRET, {expiresIn: '10m'});
-			res.status(200).send({token: accessToken});
+			const accessToken = jwt.sign({username: req.cookies.username}, process.env.JWT_ACCESS_SECRET, {expiresIn: '10m'});
+			res.cookie('token', accessToken, {httpOnly: true});
+			res.status(200).send({message: 'Access token regenerated'});
 		}
 	}
 }
@@ -90,7 +99,7 @@ const regenerateAccessToken = async (req, res) => {
 //For testing purposes
 const showAllUsers = async (req, res) => {
 	const users = await knex('users').select('*');
-	res.status(200).send(users);
+	res.status(200).send(users).send({message: "Users retrieved"});
 }
 
 const refreshTokens = async (req, res) => {

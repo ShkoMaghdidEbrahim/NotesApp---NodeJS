@@ -6,8 +6,8 @@
 		<title>Note App</title>
 		<link href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel = "stylesheet">
 		<script>
-			if (!localStorage.getItem('token')) {
-				window.location.replace('./UserLogin.html')
+			if (document.cookie.indexOf('authenticated') === -1) {
+				window.location.href = './UserLogin.html';
 			}
 		</script>
 		<style>
@@ -256,15 +256,11 @@
 		</footer>
 		<script>
 			async function fetchNotes() {
-				
-				const token = localStorage.getItem('token');
 				try {
 					const response = await fetch(
 						`http://localhost:3000/notes/${-1}`, {
 							method: 'GET',
-							headers: {
-								'Authorization': `Bearer ${token}`
-							},
+							credentials: 'include',
 						}
 					);
 					await checkToken(response);
@@ -277,6 +273,7 @@
 						const noteDiv = createNoteElement(note);
 						notesContainer.appendChild(noteDiv);
 					});
+					
 				}
 				catch (error) {
 					console.error('Error fetching notes:', error);
@@ -324,39 +321,33 @@
 				formData.append('content', content);
 				formData.append('image', document.getElementById('uploaded-image').files[0]);
 				
-				const token = localStorage.getItem('token');
 				const response = await fetch('http://localhost:3000/notes', {
 					method: 'POST',
-					headers: {
-						'Authorization': `Bearer ${token}`
-					},
+					credentials: 'include',
 					body: formData,
 				});
+				alert('Note created successfully!')
 				await checkToken(response);
 				document.getElementById('note-form').reset();
 				await fetchNotes();
 			}
 			
 			async function deleteNote(id) {
-				const token = localStorage.getItem('token');
 				const response = await fetch(`http://localhost:3000/notes/${id}`, {
 					method: 'DELETE',
-					headers: {
-						'Authorization': `Bearer ${token}`
-					},
+					credentials: 'include',
 				});
+				alert('Note deleted successfully!')
 				await checkToken(response);
 				await fetchNotes();
 			}
 			
 			async function deleteAllNotes() {
-				const token = localStorage.getItem('token');
 				const response = await fetch(`http://localhost:3000/notes/${-1}`, {
 					method: 'DELETE',
-					headers: {
-						'Authorization': `Bearer ${token}`
-					},
+					credentials: 'include',
 				});
+				alert('All notes deleted successfully!')
 				await checkToken(response);
 				await fetchNotes();
 			}
@@ -403,15 +394,12 @@
 					formData.append('image', newImage);
 				}
 				
-				const token = localStorage.getItem('token');
 				const response = await fetch(`http://localhost:3000/notes/${noteId}`, {
 					method: 'PUT',
-					headers: {
-						'Authorization': `Bearer ${token}`
-					},
+					credentials: 'include',
 					body: formData,
 				});
-				
+				alert('Note updated successfully!')
 				await checkToken(response);
 				toggleEditMode(noteId);
 				await fetchNotes();
@@ -422,36 +410,28 @@
 			}
 			
 			async function logout() {
-				localStorage.removeItem('token');
 				await fetch('http://localhost:3000/users/logout', {
 					method: 'POST',
+					credentials: 'include',
 					headers: {
 						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify({
-						username: localStorage.getItem('username')
-					})
+					}
 				});
-				localStorage.removeItem('username');
-				localStorage.removeItem('refreshToken');
 				window.location.href = './UserLogin.html';
 			}
 			
 			async function checkToken(response) {
 				if (response.status === 403) {
+					alert('Token expired! Refreshing token...')
 					const response = await fetch('http://localhost:3000/users/regenerate_access_token', {
 						method: 'POST',
+						credentials: 'include',
 						headers: {
 							'Content-Type': 'application/json'
 						},
-						body: JSON.stringify({
-							refreshToken: localStorage.getItem('refreshToken'),
-							username: localStorage.getItem('username')
-						})
 					});
 					if (response.status === 200) {
-						const data = await response.json();
-						localStorage.setItem('token', data.token);
+						alert('Token refreshed successfully!')
 						await fetchNotes();
 					}
 					else {

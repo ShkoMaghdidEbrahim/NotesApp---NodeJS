@@ -17,9 +17,7 @@ const storage = multer({
 
 const getNotes = async (req, res) => {
 	const user = req.user;
-	console.log(user.username)
 	if (req.params.id === "-1") {
-		console.log("ehefasd")
 		const notes = await knex('notes').
 			select('*').
 			where('username', user.username).

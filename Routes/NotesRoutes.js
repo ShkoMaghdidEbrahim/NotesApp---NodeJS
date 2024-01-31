@@ -1,5 +1,4 @@
 const express = require('express');
-const cors = require('cors');
 const app = express();
 const router = express.Router();
 
@@ -9,7 +8,6 @@ app.use(router);
 
 const upload = notesController.storage;
 
-router.use(cors());
 const authenticateToken = require('../Controllers/AuthenticateToken');
 router.use(authenticateToken.authenticateToken);
 

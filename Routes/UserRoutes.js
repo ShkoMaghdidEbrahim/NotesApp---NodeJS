@@ -1,12 +1,10 @@
 const express = require('express');
-const cors = require('cors');
 const app = express();
 const router = express.Router();
 
 const usersController = require('../Controllers/UsersController');
 
 app.use(router);
-router.use(cors());
 
 //Real routes
 router.route('/register').post(usersController.registerUser);

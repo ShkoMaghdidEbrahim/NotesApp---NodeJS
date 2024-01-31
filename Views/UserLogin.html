@@ -3,6 +3,11 @@
 	<head>
 		<meta charset = "UTF-8">
 		<meta content = "width=device-width, initial-scale=1.0" name = "viewport">
+		<script>
+			if (document.cookie.indexOf('authenticated') !== -1) {
+				window.location.replace('./index.html');
+			}
+		</script>
 		<style>
             body {
                 display: flex;
@@ -103,24 +108,17 @@
 				
 				if (username && password) {
 					document.getElementById('error-message').innerText = '';
-					
 					const response = await fetch('http://localhost:3000/users/login', {
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json'
 						},
+						credentials: "include",
 						body: JSON.stringify({
 							username: username,
 							password: password
 						})
 					});
-					
-					response.json().then(data => {
-						localStorage.setItem('token', data.token);
-						localStorage.setItem('refreshToken', data.refreshToken);
-					});
-					localStorage.setItem('username', username);
-					
 					if (response.status === 200) {
 						window.location.replace('./index.html')
 					}
