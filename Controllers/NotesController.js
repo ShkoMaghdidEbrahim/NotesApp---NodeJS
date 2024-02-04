@@ -17,12 +17,12 @@ const storage = multer({
 
 const getNotes = async (req, res) => {
 	const user = req.user;
+	let notes = [];
 	if (req.params.id === "-1") {
-		const notes = await knex('notes').
+		notes = await knex('notes').
 			select('*').
 			where('username', user.username).
 			andWhere('deleted', false);
-		res.json(notes);
 	}
 	else {
 		const note = await knex('notes').
@@ -32,6 +32,14 @@ const getNotes = async (req, res) => {
 			andWhere('deleted', false);
 		res.json(note);
 	}
+	
+	const publicNotes = await knex('notes').
+		select('*').
+		where('public', true).
+		andWhereNot('username', user.username).
+		andWhere('deleted', false);
+	const response = {notes, publicNotes};
+	res.json(response);
 }
 
 const createNote = async (req, res) => {
@@ -43,8 +51,7 @@ const createNote = async (req, res) => {
 		if (req.file) {
 			imageUrl = `/uploads/${req.file.filename}`;
 		}
-		
-		await knex('notes').insert({title, content, image_url: imageUrl, username: user.username});
+		await knex('notes').insert({title, content, image_url: imageUrl, username: user.username, public: JSON.parse(req.body.public)});
 		
 		res.status(201).json({message: 'Note created successfully'});
 	}
@@ -80,26 +87,25 @@ const deleteNotes = async (req, res) => {
 const updateNote = async (req, res) => {
 	try {
 		const {title, content} = req.body;
-		let imageUrl = null;
 		let message = "";
-		console.log(req.file)
-		console.log(req.file.filename)
+		
 		if (req.file) {
-			imageUrl = `/uploads/${req.file.filename}`;
+			const imageUrl = `/uploads/${req.file.filename}`;
+			
+			const [note] = await knex('notes').where('id', req.params.id).andWhere('deleted', false);
+			if (note && note.image_url !== null) {
+				try {
+					fs.unlinkSync(path.join(__dirname, note.image_url));
+				}
+				catch (error) {
+					message = "Old file associated with the note could not be found, keep going!"
+				}
+			}
+			
+			await knex('notes').where('id', req.params.id).update({title, content, image_url: imageUrl, public: JSON.parse(req.body.public)});
 		}
 		
-		const [note] = await knex('notes').where('id', req.params.id).andWhere('deleted', false);
-		if (note && note.image_url !== null) {
-			try {
-				fs.unlinkSync(path.join(__dirname, note.image_url));
-			}
-			catch (error) {
-				message = "Old file associated with the note could not be found, keep going!"
-			}
-		}
-		
-		await knex('notes').where('id', req.params.id).update({title, content, image_url: imageUrl});
-		
+		await knex('notes').where('id', req.params.id).update({title, content, public: JSON.parse(req.body.public)});
 		res.json({message: message + 'Note updated successfully'});
 	}
 	catch (error) {

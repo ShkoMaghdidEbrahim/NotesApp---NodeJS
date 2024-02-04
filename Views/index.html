@@ -7,10 +7,26 @@
 		<link href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel = "stylesheet">
 		<script>
 			if (document.cookie.indexOf('authenticated') === -1) {
-				window.location.href = './UserLogin.html';
+				window.location.href = './UserLogin.html'
+				alert('You are not logged in! Please login to access the notes app.')
 			}
 		</script>
 		<style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+                outline: 1px solid transparent;
+            }
+            
+            html,
+            body {
+                height: 100%;
+                width: 100%;
+                margin: 0;
+            }
+            
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 margin: 0;
@@ -79,10 +95,15 @@
                 background-color: #4CAF50;
             }
             
-            #notes-container {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: space-around;
+            #private-notes-container, #public-notes-container {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+            }
+            
+            .headers {
+                text-align: center;
+                color: #2F9333;
             }
             
             .image-div {
@@ -121,7 +142,7 @@
             
             .note {
                 height: auto;
-                width: calc(33% - 20px);
+                width: 100%;
                 background-color: #FFF;
                 border: 1px solid #DDD;
                 border-radius: 8px;
@@ -219,6 +240,63 @@
                 background-color: #4CAF50;
                 color: #FFF;
             }
+            
+            #toggle-label {
+                all: initial;
+                font-size: 1.2rem;
+                color: #FFF;
+                font-family: 'Arial', sans-serif;
+            }
+            
+            .toggle-container input {
+                margin: 16px 0;
+                width: 100px;
+            }
+            
+            .toggle-container {
+                background-color: #4CAF50;
+                width: 100%;
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                margin-top: 8px;
+                margin-bottom: 10px;
+                border-radius: 5px;
+            }
+            
+            .toggle-container label {
+                flex: 1;
+            }
+            
+            .toggle-container input {
+                margin-left: 10px;
+            }
+            
+            .note-buttons input {
+                background: black;
+                width: auto;
+            }
+            
+            @media screen and (max-width: 768px) {
+                #private-notes-container, #public-notes-container {
+                    grid-template-columns: 1fr;
+                    
+                }
+                
+                .note {
+                    width: 100%;
+                    height: auto;
+                }
+                
+                .note h3 {
+                    font-size: 1.7rem;
+                    margin-bottom: 10px;
+                }
+                
+                .note p {
+                    font-size: 1.2rem;
+                }
+            }
 		</style>
 	</head>
 	<body>
@@ -238,6 +316,11 @@
 				<label for = "content">Content</label>
 				<textarea id = "content" name = "content" required></textarea>
 				
+				<div class = "toggle-container">
+					<label for = "toggle-public" id = "toggle-label">Public</label>
+					<input id = "toggle-public" type = "checkbox">
+				</div>
+				
 				<label class = "custom-file-input-label" for = "uploaded-image">Upload Image</label>
 				<div class = "custom-file-input">
 					<input accept = "image/*" id = "uploaded-image" type = "file">
@@ -247,8 +330,11 @@
 				<button onclick = "deleteAllNotes()" type = "button">Delete All Notes</button>
 			</form>
 			
-			<div id = "notes-container">
-			</div>
+			<h2 class = "headers">Your Notes</h2>
+			<div id = "private-notes-container"></div>
+			
+			<h2 class = "headers">Public Notes</h2>
+			<div id = "public-notes-container"></div>
 		</main>
 		
 		<footer>
@@ -266,14 +352,21 @@
 					await checkToken(response);
 					const notes = await response.json();
 					
-					const notesContainer = document.getElementById('notes-container');
+					const notesContainer = document.getElementById('private-notes-container');
 					notesContainer.innerHTML = '';
 					
-					notes.forEach(note => {
+					notes.notes.forEach(note => {
 						const noteDiv = createNoteElement(note);
 						notesContainer.appendChild(noteDiv);
 					});
 					
+					const publicNotesContainer = document.getElementById('public-notes-container');
+					publicNotesContainer.innerHTML = '';
+					
+					notes.publicNotes.forEach(note => {
+						const noteDiv = createPublicNoteElement(note);
+						publicNotesContainer.appendChild(noteDiv);
+					});
 				}
 				catch (error) {
 					console.error('Error fetching notes:', error);
@@ -291,14 +384,17 @@
                     <div class="note-buttons">
                         <button onclick="toggleEditMode(${note.id})"><i class="fas fa-edit"></i></button>
                         <button onclick="deleteNote(${note.id})"><i class="fas fa-trash"></i></button>
+                        <input type="checkbox" class="toggle-${note.id}" disabled id="public-indicator">
                     </div>
                     <h3 class="note-title">${note.title}</h3>
                     <p class="note-content">${note.content}</p>
                     <div class="edit-buttons"></div>
+                    
                 `;
 				
+				noteDiv.getElementsByClassName(`toggle-${note.id}`)[0].checked = note.public;
+				
 				if (note.image_url !== null && note.image_url !== undefined) {
-					
 					const image = document.createElement('img');
 					imageDiv.append(image)
 					image.classList.add('note-image');
@@ -312,6 +408,48 @@
 				return noteDiv;
 			}
 			
+			function createPublicNoteElement(note) {
+				const noteDiv = document.createElement('div');
+				const imageDiv = document.createElement('div');
+				noteDiv.classList.add('note');
+				imageDiv.classList.add('image-div');
+				noteDiv.id = `note-${note.id}`;
+				
+				noteDiv.innerHTML = `
+        		<div class="note-buttons">
+            		<button onclick="likeNote(${note.id})"><i class="fas fa-thumbs-up"></i></button>
+            		<button onclick="commentOnNote(${note.id})"><i class="fas fa-comment"></i></button>
+       			</div>
+        		<h3 class="note-title">${note.title}</h3>
+        		<p class="note-content">${note.content}</p>
+    			`;
+				
+				if (note.image_url !== null && note.image_url !== undefined) {
+					const image = document.createElement('img');
+					imageDiv.append(image);
+					image.classList.add('note-image');
+					image.classList.add('note-image');
+					image.src = note.image_url;
+					image.alt = 'image';
+					image.width = 100;
+					noteDiv.append(imageDiv);
+				}
+				
+				return noteDiv;
+			}
+			
+			function likeNote(noteId) {
+				// Implement the logic to handle liking a note
+				// For example, you can send a request to the server to increment the like count for the given noteId
+				console.log(`Liked note with ID: ${noteId}`);
+			}
+			
+			function commentOnNote(noteId) {
+				// Implement the logic to handle commenting on a note
+				// For example, you can show a modal or redirect to a comments page for the given noteId
+				console.log(`Commented on note with ID: ${noteId}`);
+			}
+			
 			async function createNote() {
 				const title = document.getElementById('title').value;
 				const content = document.getElementById('content').value;
@@ -320,6 +458,7 @@
 				formData.append('title', title);
 				formData.append('content', content);
 				formData.append('image', document.getElementById('uploaded-image').files[0]);
+				formData.append('public', document.getElementById('toggle-public').checked);
 				
 				const response = await fetch('http://localhost:3000/notes', {
 					method: 'POST',
@@ -367,15 +506,20 @@
 				
 				if (isEditing) {
 					editButtons.innerHTML = `
-<div id="edit-buttons">
-	<button onclick="saveEdit(${noteId})">Save</button>
-	<button onclick="cancelEdit(${noteId})">Cancel</button>
-	<label class = "custom-file-input-label" for = "uploaded-image-edit">Upload Image</label>
-<div class="custom-file-input">
-<input accept = "image/*" id = "uploaded-image-edit" type = "file">
-</div>
-</div>
+					<div id="edit-buttons">
+						<button onclick="saveEdit(${noteId})">Save</button>
+						<button onclick="cancelEdit(${noteId})">Cancel</button>
+						<label class = "custom-file-input-label" for = "uploaded-image-edit">Upload Image</label>
+						<div class = "toggle-container">
+							<label id="toggle-label" for = "toggle-edit-public">Public</label>
+							<input type = "checkbox" id = "toggle-edit-public" class="toggle-edit-${noteId}">
+						</div>
+						<div class="custom-file-input">
+							<input accept = "image/*" id = "uploaded-image-edit" type = "file">
+						</div>
+					</div>
                     `;
+					noteDiv.getElementsByClassName(`toggle-edit-${noteId}`)[0].checked = document.getElementsByClassName(`toggle-${noteId}`)[0].checked;
 				}
 			}
 			
@@ -388,6 +532,7 @@
 				const formData = new FormData();
 				formData.append('title', title);
 				formData.append('content', content);
+				formData.append('public', noteDiv.getElementsByClassName(`toggle-edit-${noteId}`)[0].checked);
 				
 				const newImage = imageInput.files[0];
 				if (newImage) {
@@ -399,10 +544,10 @@
 					credentials: 'include',
 					body: formData,
 				});
-				alert('Note updated successfully!')
 				await checkToken(response);
 				toggleEditMode(noteId);
 				await fetchNotes();
+				alert('Note updated successfully!')
 			}
 			
 			function cancelEdit(noteId) {
