@@ -1,7 +1,8 @@
 const express = require('express');
+require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
-const LAN_IP = 'localhost';
+const LAN_IP = process.env.HOST;
 const cors = require("cors");
 
 const cookieParser = require('cookie-parser');
@@ -28,8 +29,7 @@ const usersRoutes = require('../note-app/Routes/UserRoutes');
 app.use('/users', usersRoutes);
 
 const notesRoutes = require('../note-app/Routes/NotesRoutes');
-
-app.use(notesRoutes);
+app.use('/notes', notesRoutes);
 
 app.listen(PORT, LAN_IP, () => {
 	console.log(`Server is running on http://${LAN_IP}:${PORT}`);

@@ -17,30 +17,69 @@ const storage = multer({
 
 const getNotes = async (req, res) => {
 	const user = req.user;
-	let notes = [];
+	let response = {};
+	
 	if (req.params.id === "-1") {
-		notes = await knex('notes').
+		const userNotes = await knex('notes').
 			select('*').
 			where('username', user.username).
 			andWhere('deleted', false);
+		
+		for (const userNote of userNotes) {
+			userNote.comments = await knex('comments').
+				select('*').
+				where('post_id', userNote.id);
+			userNote.numberOfLikes = (await knex('likes').
+				where('item_id', userNote.id).
+				count('user_id', {as: 'likes'}))[0].likes || 0;
+			userNote.liked = !!(await knex('likes').
+				where('item_id', userNote.id).
+				first());
+		}
+		
+		const publicNotes = await knex('notes').select('*').where('public', true).andWhereNot('username', user.username).andWhere('deleted', false);
+		
+		for (const publicNote of publicNotes) {
+			publicNote.comments = await knex('comments').
+				select('*').
+				where('post_id', publicNote.id);
+			publicNote.numberOfLikes = (await knex('likes').
+				where('item_id', publicNote.id).
+				count('user_id', {as: 'likes'}))[0].likes || 0;
+			publicNote.liked = !!(await knex('likes').
+				where('item_id', publicNote.id).
+				first());
+		}
+		
+		response = {userNotes, publicNotes};
 	}
 	else {
-		const note = await knex('notes').
+		const singleNote = await knex('notes').
+			select('*').where('public', true).
+			andWhere('id', req.params.id).
+			andWhere('deleted', false).
+			first();
+		
+		if (!singleNote) {
+			return res.status(404).json({message: 'Note not found'});
+		}
+		
+		singleNote.comments = await knex('comments').
 			select('*').
-			where('id', req.params.id).
-			andWhere('username', user.username).
-			andWhere('deleted', false);
-		res.json(note);
+			where('post_id', req.params.id);
+		singleNote.numberOfLikes = (await knex('likes').
+			where('item_id', req.params.id).
+			count('user_id', {as: 'likes'}))[0].likes || 0;
+		singleNote.liked = !!(await knex('likes').
+			where('item_id', req.params.id).
+			first());
+		
+		response = singleNote;
 	}
 	
-	const publicNotes = await knex('notes').
-		select('*').
-		where('public', true).
-		andWhereNot('username', user.username).
-		andWhere('deleted', false);
-	const response = {notes, publicNotes};
-	res.json(response);
-}
+	console.log(response);
+	return res.json(response);
+};
 
 const createNote = async (req, res) => {
 	try {
