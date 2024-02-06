@@ -75,6 +75,18 @@
                 text-decoration: none;
                 font-weight: bold;
             }
+            
+            input.email {
+                width: calc(100% - 26px);
+            }
+            
+            button.small-button {
+                white-space: nowrap;
+                padding: 0 8px;
+                font-size: 12px;
+                margin-left: 4px;
+                margin-bottom: 12px;
+            }
 		</style>
 		<title>Registration Page</title>
 	</head>
@@ -82,12 +94,21 @@
 		<div class = "registration-container">
 			<h2>Register</h2>
 			<form id = "registration-form">
-				<label for = "fullName">Username</label>
-				<input id = "fullName" name = "fullName" required type = "text">
+				<input id = "fullName" name = "fullName" placeholder = "Username" required type = "text">
 				
-				<label for = "password">Password</label>
-				<input id = "password" name = "password" required type = "password">
+				<div style = "display: flex;">
+					<input class = "email" id = "email" name = "email" placeholder = "Email" required type = "email">
+					<button class = "small-button" onclick = "sendEmailVerificationCode()" type = "button">Send Code</button>
+				</div>
+				<input class = "verification-code" id = "emailVerificationCode" name = "emailVerificationCode" placeholder = "Email Verification Code" required type = "text">
 				
+				<div style = "display: flex;">
+					<input class = "email" id = "phone" name = "phone" placeholder = "Phone Number" required type = "number">
+					<button class = "small-button" onclick = "sendPhoneVerificationCode()" type = "button">Send Code</button>
+				</div>
+				<input class = "verification-code" id = "phoneVerificationCode" name = "phoneVerificationCode" placeholder = "Phone Verification Code" required type = "text">
+				
+				<input id = "password" name = "password" placeholder = "Password" required type = "password">
 				<button onclick = "register()" type = "button">Register</button>
 			</form>
 			<p class = "error-message" id = "error-message"></p>
@@ -97,12 +118,84 @@
 		</div>
 		
 		<script>
+			async function sendEmailVerificationCode() {
+				const email = document.getElementById('email').value;
+				
+				if (email) {
+					document.getElementById('error-message').innerText = '';
+					
+					const response = await fetch('http://localhost:3000/users/register/verify_email', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({
+							email: email
+						})
+					});
+					
+					if (response.status === 200) {
+						alert('Verification code sent successfully!');
+					}
+					else {
+						alert('Failed to send verification code. \n' + response.statusText);
+					}
+				}
+				else {
+					document.getElementById('error-message').innerText = 'Please enter your email first.';
+				}
+			}
+			
+			async function sendPhoneVerificationCode() {
+				const phoneNumber = document.getElementById('phoneNumber').value;
+				
+				if (phoneNumber) {
+					document.getElementById('error-message').innerText = '';
+					
+					const response = await fetch('http://localhost:3000/users/register/verify_phone', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({
+							phoneNumber: phoneNumber
+						})
+					});
+					
+					if (response.status === 200) {
+						alert('Verification code sent successfully!');
+					}
+					else {
+						alert('Failed to send verification code. \n' + response.statusText);
+					}
+				}
+				else {
+					document.getElementById('error-message').innerText = 'Please enter your phone number first.';
+				}
+			}
+			
 			async function register() {
 				const fullName = document.getElementById('fullName').value;
 				const password = document.getElementById('password').value;
+				const email = document.getElementById('email').value;
+				const emailVerificationCode = document.getElementById('emailVerificationCode').value;
+				const phoneNumber = document.getElementById('phoneNumber').value;
+				const phoneVerificationCode = document.getElementById('phoneVerificationCode').value;
 				
-				if (fullName && password) {
+				if (fullName && email && emailVerificationCode && phoneNumber && phoneVerificationCode && password) {
 					document.getElementById('error-message').innerText = '';
+					
+					const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+					if (!emailRegex.test(email)) {
+						document.getElementById('error-message').innerText = 'Please enter a valid email address.';
+						return;
+					}
+					
+					const iraqiPhoneNumberRegex = /^0[12356789]\d{8}$/;
+					if (!iraqiPhoneNumberRegex.test(phoneNumber)) {
+						document.getElementById('error-message').innerText = 'Please enter a valid Iraqi phone number.';
+						return;
+					}
 					
 					const response = await fetch('http://localhost:3000/users/register', {
 						method: 'POST',
@@ -111,9 +204,14 @@
 						},
 						body: JSON.stringify({
 							username: fullName,
-							password: password
+							password: password,
+							email: email,
+							emailVerificationCode: emailVerificationCode,
+							phoneNumber: phoneNumber,
+							phoneVerificationCode: phoneVerificationCode
 						})
 					});
+					
 					if (response.status === 201) {
 						alert('Registration successful!');
 						window.location.href = './UserLogin.html';

@@ -15,6 +15,10 @@ router.route('/logout').post(usersController.logoutUser);
 
 router.route('/regenerate_access_token').post(usersController.regenerateAccessToken);
 
+router.route('/register/verify_email').post(usersController.sendVerificationEmail);
+
+router.route('/register/verify_phone').post(usersController.sendVerificationPhone);
+
 //For testing purposes
 router.route('/').get(usersController.showAllUsers);
 
