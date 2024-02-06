@@ -128,7 +128,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"username\": \"username\",\r\n  \"password\": \"password\"\r\n}\r\n",
+							"raw": "{\r\n  \"username\": \"username\",\r\n  \"password\": \"password\",\r\n  \"email\": \"email\",\r\n  \"emailVerificationCode\": \"emailVerificationCode\",\r\n  \"phoneNumber\": \"phoneNumber\",\r\n  \"phoneVerificationCode\": \"phoneVerificationCode\"\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -174,6 +174,87 @@
 							"path": [
 								"users",
 								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Like A Note",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/notes/id/like",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"notes",
+								"id",
+								"like"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send Verification Email",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"shkoma.ranya@gmail.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/users/register/verify_email",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"users",
+								"register",
+								"verify_email"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send Verification Code",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"phoneNumber\": \"phoneNumber\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/users/register/verify_phone",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"users",
+								"register",
+								"verify_phone"
 							]
 						}
 					},
