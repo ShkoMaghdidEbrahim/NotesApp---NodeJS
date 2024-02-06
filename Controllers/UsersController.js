@@ -36,7 +36,7 @@ const registerUser = async (req, res) => {
 			}
 			
 		});
-		phoneVerificationCodeTokenDecoded = jwt.verify(emailVerificationCodeToken.verification_code, process.env.VERIFICATION_SECRET, (err, decoded) => {
+		phoneVerificationCodeTokenDecoded = jwt.verify(phoneVerificationCodeToken.verification_code, process.env.VERIFICATION_SECRET, (err, decoded) => {
 			if (err) {
 				console.log(err);
 				return res.status(401).send({message: "Invalid phone verification code"});
@@ -113,12 +113,17 @@ const sendVerificationPhone = async (req, res) => {
 	
 	const verificationCode = Math.floor(100000 + Math.random() * 900000);
 	
-	client.messages.create({
-		body: 'Your Verification Code Is: ' + verificationCode + '. \nPlease do not share this code with anyone. \nThis code will expire in 10 minutes.',
-		from: process.env.TWILIO_PHONE_NUMBER,
-		to: '+964' + phoneNumber,
-	}).then(message => console.log(message.sid));
-	
+	try {
+		await client.messages.create({
+			body: 'Your Verification Code Is: ' + verificationCode + '. \nPlease do not share this code with anyone. \nThis code will expire in 10 minutes.',
+			from: process.env.TWILIO_PHONE_NUMBER,
+			to: '+964' + phoneNumber,
+		});
+	}
+	catch (error) {
+		console.error(error);
+		res.status(500).send({message: "Phone verification code not sent"});
+	}
 	const verificationCodeToken = jwt.sign({verificationCode: verificationCode}, process.env.VERIFICATION_SECRET, {expiresIn: '10m'});
 	
 	const verificationCodeExists = await knex('verification_codes').where({sent_to: phoneNumber}).first();

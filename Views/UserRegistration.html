@@ -147,7 +147,7 @@
 			}
 			
 			async function sendPhoneVerificationCode() {
-				const phoneNumber = document.getElementById('phoneNumber').value;
+				const phoneNumber = document.getElementById('phone').value;
 				
 				if (phoneNumber) {
 					document.getElementById('error-message').innerText = '';
@@ -179,7 +179,7 @@
 				const password = document.getElementById('password').value;
 				const email = document.getElementById('email').value;
 				const emailVerificationCode = document.getElementById('emailVerificationCode').value;
-				const phoneNumber = document.getElementById('phoneNumber').value;
+				const phoneNumber = document.getElementById('phone').value;
 				const phoneVerificationCode = document.getElementById('phoneVerificationCode').value;
 				
 				if (fullName && email && emailVerificationCode && phoneNumber && phoneVerificationCode && password) {
@@ -191,7 +191,9 @@
 						return;
 					}
 					
-					const iraqiPhoneNumberRegex = /^0[12356789]\d{8}$/;
+					const iraqiPhoneNumberRegex = /^7[3-9]\d{8}$/;
+					alert(phoneNumber)
+					alert(iraqiPhoneNumberRegex.test(phoneNumber));
 					if (!iraqiPhoneNumberRegex.test(phoneNumber)) {
 						document.getElementById('error-message').innerText = 'Please enter a valid Iraqi phone number.';
 						return;
