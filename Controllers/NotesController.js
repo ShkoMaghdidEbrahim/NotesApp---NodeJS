@@ -76,8 +76,6 @@ const getNotes = async (req, res) => {
 		
 		response = singleNote;
 	}
-	
-	console.log(response);
 	return res.json(response);
 };
 

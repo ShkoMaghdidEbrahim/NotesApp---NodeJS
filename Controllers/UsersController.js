@@ -202,26 +202,37 @@ const regenerateAccessToken = async (req, res) => {
 	const refreshToken = req.cookies.refreshToken;
 	
 	if (!refreshToken) {
-		res.status(401).send({message: 'No refresh token provided'});
+		return res.status(401).send({message: 'No refresh token provided'});
 	}
 	else {
 		const user_id = await knex('users').where({username: req.cookies.username}).first();
 		const token = await knex('refresh_tokens').where({token: refreshToken, user_id: user_id.id}).first();
 		
 		if (!token) {
-			res.status(401).send({message: 'Invalid refresh token'});
+			return res.status(401).send({message: 'Invalid refresh token'});
 		}
 		else {
+			const verifyToken = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err) => {
+				if (err) {
+					console.log(err);
+					return false;
+				}
+				else {
+					return true;
+				}
+			});
+			if (!verifyToken) {
+				return res.status(401).send({message: 'Invalid refresh token'});
+			}
 			const accessToken = jwt.sign({username: req.cookies.username}, process.env.JWT_ACCESS_SECRET, {expiresIn: '60m'});
 			const rotatedRefreshToken = jwt.sign({username: req.cookies.username}, process.env.JWT_REFRESH_SECRET, {expiresIn: '7d'});
 			await knex('refresh_tokens').where({token: refreshToken}).update({token: rotatedRefreshToken});
-			res.clearCookie('authenticated');
 			
 			res.cookie('token', accessToken, {httpOnly: true, maxAge: 60 * 60 * 1000});
 			res.cookie('refreshToken', rotatedRefreshToken, {httpOnly: true, maxAge: 60 * 60 * 24 * 7 * 1000});
 			res.cookie('authenticated', true, {httpOnly: false, maxAge: 60 * 60 * 1000});
 			
-			res.status(200).send({message: 'Access token regenerated'});
+			return res.status(200).send({message: 'Access token regenerated'});
 		}
 	}
 }

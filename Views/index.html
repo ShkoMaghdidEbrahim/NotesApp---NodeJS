@@ -7,6 +7,10 @@
 		<link href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel = "stylesheet">
 		<script>
 			if (document.cookie.indexOf('authenticated') === -1) {
+				checkToken();
+			}
+			
+			async function checkToken() {
 				const response = await fetch('http://localhost:3000/users/regenerate_access_token', {
 					method: 'POST',
 					credentials: 'include',
@@ -607,7 +611,6 @@
 				);
 				await checkToken(response);
 				const note = await response.json();
-				console.log(note.comments);
 				const existingNote = document.getElementById(`note-${noteId}`);
 				const newNote = createPublicNoteElement(note);
 				existingNote.replaceWith(newNote);
