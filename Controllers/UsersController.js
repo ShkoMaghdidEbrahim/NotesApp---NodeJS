@@ -213,7 +213,14 @@ const regenerateAccessToken = async (req, res) => {
 		}
 		else {
 			const accessToken = jwt.sign({username: req.cookies.username}, process.env.JWT_ACCESS_SECRET, {expiresIn: '60m'});
-			res.cookie('token', accessToken, {httpOnly: true});
+			const rotatedRefreshToken = jwt.sign({username: req.cookies.username}, process.env.JWT_REFRESH_SECRET, {expiresIn: '7d'});
+			await knex('refresh_tokens').where({token: refreshToken}).update({token: rotatedRefreshToken});
+			res.clearCookie('authenticated');
+			
+			res.cookie('token', accessToken, {httpOnly: true, maxAge: 60 * 60 * 1000});
+			res.cookie('refreshToken', rotatedRefreshToken, {httpOnly: true, maxAge: 60 * 60 * 24 * 7 * 1000});
+			res.cookie('authenticated', true, {httpOnly: false, maxAge: 60 * 60 * 1000});
+			
 			res.status(200).send({message: 'Access token regenerated'});
 		}
 	}
